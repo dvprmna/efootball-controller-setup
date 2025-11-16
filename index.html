@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eFootball Controller Setup Utility</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #222;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        header {
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 3px solid #00bcd4;
+            margin-bottom: 20px;
+        }
+        h1 { color: #00bcd4; font-size: 2.2em; margin-bottom: 5px; }
+        h2 { color: #ff9800; border-bottom: 2px solid #333; padding-bottom: 5px; margin-top: 30px; }
+        
+        /* Status Bar */
+        #status-bar {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 15px auto;
+            width: 80%;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        #status-icon { margin-right: 8px; animation: pulse 1.5s infinite; }
+        .connected #status-icon { color: #4CAF50; } 
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* --- Visualizer Styling (POSITION ABSOLUT KETAT) --- */
+        #visualizer-section {
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+
+        #gamepad-visualizer {
+            background: #3a3a3a;
+            border-radius: 40px;
+            height: 400px; /* TINGGI DITETAPKAN */
+            margin: 30px auto;
+            max-width: 650px; 
+            position: relative; /* Kunci: Jadikan RELATIVE */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        /* TRIGGER BUTTONS (L1, R1, L2, R2) */
+        .trigger {
+            position: absolute;
+            width: 60px;
+            height: 25px;
+            background: #555;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 25px;
+            font-size: 0.8em;
+            font-weight: bold;
+            z-index: 10;
+        }
+        /* Penempatan Tombol Bahu */
+        #L2 { top: 10px; left: 20px; }
+        #L1 { top: 10px; left: 90px; }
+        #R1 { top: 10px; right: 90px; }
+        #R2 { top: 10px; right: 20px; }
+
+        /* MENU BUTTONS (SHARE, OPTIONS) */
+        .small-btn {
+            position: absolute;
+            background: #333;
+            color: #ccc;
+            padding: 5px 8px;
+            border-radius: 3px;
+            font-size: 0.6em;
+            z-index: 10;
+        }
+        /* Penempatan Menu */
+        #select { top: 60px; left: 250px; }
+        #start { top: 60px; right: 250px; }
+
+
+        /* D-PAD */
+        .dpad-container {
+            position: absolute;
+            top: 100px; 
+            left: 100px; /* Posisi D-Pad */
+            width: 90px;
+            height: 90px;
+            display: grid;
+            grid-template-areas: ". up ." "left center right" ". down .";
+            gap: 1px;
+            background-color: #444;
+            border-radius: 5px;
+        }
+        .dpad-button {
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+        .dpad-container > div:nth-child(5) { background-color: transparent; }
+
+        /* ACTION BUTTONS */
+        .action-buttons {
+            position: absolute;
+            top: 100px; /* Sejajar D-Pad */
+            right: 80px; /* REVISI: Ditarik sedikit ke kanan (dari 100px) */
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            width: 100px;
+            height: 100px;
+            grid-template-areas: ". Y" "X B" ". A";
+        }
+        .button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #333;
+            transition: background-color 0.1s;
+            font-size: 0.8em;
+        }
+
+        /* Tombol Warna */
+        #Y { grid-area: Y; background-color: #FFEB3B; color: #333; } 
+        #B { grid-area: B; background-color: #F44336; color: white; } 
+        #X { grid-area: X; background-color: #4CAF50; color: white; } 
+        #A { grid-area: A; background-color: #2196F3; color: white; } 
+
+
+        /* --- STICKS (LS & RS) --- */
+        .stick {
+            width: 70px;
+            height: 70px;
+            background: #555;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            position: absolute; 
+            z-index: 5;
+        }
+
+        /* LS: Ditaruh di kiri bawah */
+        #LS { 
+            bottom: 50px; 
+            left: 100px; 
+        }
+
+        /* RS: Ditaruh di kanan bawah, sejajar dengan LS */
+        #RS { 
+            bottom: 50px; 
+            right: 100px; 
+        }
+
+
+        /* Active State */
+        .active {
+            background-color: #00bcd4 !important;
+            box-shadow: 0 0 10px #00bcd4, 0 0 5px #00bcd4;
+            transform: scale(1.05);
+            color: white !important;
+        }
+
+        /* --- MAPPING SECTION STYLING (KUNCI PENYEJAJARAN TABEL) --- */
+        #mapping-section {
+            margin-top: 50px; 
+            clear: both; /* Memastikan di bawah visualizer */
+        }
+
+        .table-group {
+            /* Membuat dua kolom sejajar */
+            display: inline-block;
+            width: 49%;
+            vertical-align: top;
+            margin-right: 1%;
+            float: left; /* Kunci penyejajaran */
+            box-sizing: border-box;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+        }
+        th, td { 
+            padding: 10px; 
+            text-align: left; 
+            border-bottom: 1px solid #333; 
+        }
+        th { 
+            background-color: #333; 
+            color: #fff; 
+            font-weight: normal; 
+            text-transform: uppercase; 
+            font-size: 0.85em; 
+        }
+        .critical { color: #F44336; font-weight: bold; }
+        .high { color: #FFEB3B; }
+        .medium { color: #00bcd4; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>🎮 eFootball Pro Mapping Assistant</h1>
+            <p>Alat bantu visualisasi dan klasifikasi tombol stik eksternal untuk konfigurasi aplikasi *key-mapper* (Panda, Octopus).</p>
+        </header>
+
+        <div id="status-bar">
+            <span id="status-icon">🔴</span>
+            <span id="status-text">Gamepad Status: Tidak Terdeteksi. Hubungkan Stik Anda.</span>
+        </div>
+
+        <section id="visualizer-section">
+            <h2>🕹️ Visualisasi Stik (Uji Tekanan Tombol)</h2>
+            <p>Tekan tombol pada stik Anda. Tombol yang menyala menunjukkan tombol yang terdeteksi oleh Web Gamepad API.</p>
+            
+            <div id="gamepad-visualizer">
+                
+                <div id="L2" class="trigger">L2</div>
+                <div id="L1" class="trigger">L1</div>
+                <div id="R1" class="trigger">R1</div>
+                <div id="R2" class="trigger">R2</div>
+
+                <div id="select" class="small-btn">SHARE</div>
+                <div id="start" class="small-btn">OPTIONS</div>
+
+                <div class="dpad-container">
+                    <div class="dpad-button" id="DPadUp" style="grid-area: up;">↑</div>
+                    <div class="dpad-button" id="DPadLeft" style="grid-area: left;">←</div>
+                    <div class="dpad-button" id="DPadRight" style="grid-area: right;">→</div>
+                    <div class="dpad-button" id="DPadDown" style="grid-area: down;">↓</div>
+                </div>
+
+                <div class="action-buttons">
+                    <div class="button Y-btn" id="Y" style="grid-area: Y;">△ / Y</div>
+                    <div class="button B-btn" id="B" style="grid-area: B;">○ / B</div>
+                    <div class="button X-btn" id="X" style="grid-area: X;">□ / X</div>
+                    <div class="button A-btn" id="A" style="grid-area: A;">✕ / A</div>
+                </div>
+                
+                <div id="LS" class="stick">LS</div>
+                <div id="RS" class="stick">RS</div>
+
+            </div>
+        </section>
+
+        <section id="mapping-section">
+            <h2>⚽ Klasifikasi Tombol In-Game eFootball</h2>
+            <p>Gunakan tabel ini sebagai panduan Anda saat memetakan tombol fisik stik ke area tombol sentuh virtual di aplikasi *mapper*.</p>
+            
+            <div class="table-group">
+                <h3>Mode Menyerang (ATTACK)</h3>
+                <table>
+                    <thead>
+                        <tr><th>Tombol Stik (PS/Xbox)</th><th>Fungsi In-Game</th><th>Prioritas</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>**✕ / A**</td><td>Umpan Pendek (Ground Pass)</td><td class="high">Tinggi</td></tr>
+                        <tr><td>**□ / X**</td><td>Tembak (Shoot) / Clearance</td><td class="high">Tinggi</td></tr>
+                        <tr><td>**△ / Y**</td><td>Umpan Terobosan (Through Ball) / Kiper Maju</td><td class="medium">Sedang</td></tr>
+                        <tr><td>**○ / B**</td><td>Umpan Lambung (LOB Pass) / Sliding Tackle</td><td class="medium">Sedang</td></tr>
+                        <tr><td>**R1 / RB**</td><td>Sprint (Lari Cepat)</td><td class="critical">Kritis</td></tr>
+                        <tr><td>**L1 / LB**</td><td>Ganti Pemain (Manual Switch)</td><td class="high">Tinggi</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-group">
+                <h3>Mode Bertahan (DEFENSE)</h3>
+                <table>
+                    <thead>
+                        <tr><th>Tombol Stik (PS/Xbox)</th><th>Fungsi In-Game</th><th>Prioritas</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>**L2 / LT**</td><td>Match-Up (Penjagaan Rapat)</td><td class="high">Tinggi</td></tr>
+                        <tr><td>**✕ / A**</td><td>Pressing & Contain (Menekan & Menahan)</td><td class="high">Tinggi</td></tr>
+                        <tr><td>**○ / B**</td><td>Sliding Tackle (Tekel Meluncur)</td><td class="medium">Sedang</td></tr>
+                        <tr><td>**L3 / LS Click**</td><td>Team Pressing (Tekanan Tim Otomatis)</td><td class="medium">Sedang</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Logika Gamepad API (tetap sama)
+        const elements = {
+            'A': document.getElementById('A'), 'B': document.getElementById('B'),
+            'X': document.getElementById('X'), 'Y': document.getElementById('Y'),
+            'L1': document.getElementById('L1'), 'R1': document.getElementById('R1'),
+            'L2': document.getElementById('L2'), 'R2': document.getElementById('R2'),
+            'LS': document.getElementById('LS'), 'RS': document.getElementById('RS'),
+            'DPadUp': document.getElementById('DPadUp'), 'DPadDown': document.getElementById('DPadDown'),
+            'DPadLeft': document.getElementById('DPadLeft'), 'DPadRight': document.getElementById('DPadRight'),
+            'start': document.getElementById('start'), 'select': document.getElementById('select')
+        };
+        const buttonMap = {
+            0: 'A', 1: 'B', 2: 'X', 3: 'Y', 
+            4: 'L1', 5: 'R1', 
+            6: 'L2', 7: 'R2', 
+            8: 'select', 9: 'start', 
+            10: 'LS', 11: 'RS',
+            12: 'DPadUp', 13: 'DPadDown', 14: 'DPadLeft', 15: 'DPadRight'
+        };
+        const statusBar = document.getElementById('status-bar');
+        const statusText = document.getElementById('status-text');
+        const statusIcon = document.getElementById('status-icon');
+        let rAF = window.requestAnimationFrame || window.mozRequestAnimationFrame;
+        let animationFrameId;
+
+        function updateStatus(gamepad) {
+            if (gamepad) {
+                statusBar.classList.add('connected');
+                statusIcon.textContent = '🟢';
+                statusText.textContent = `Gamepad Terdeteksi: ${gamepad.id}`;
+            } else {
+                statusBar.classList.remove('connected');
+                statusIcon.textContent = '🔴';
+                statusText.textContent = 'Tidak Terdeteksi. Hubungkan Stik Anda.';
+            }
+        }
+
+        function gameLoop() {
+            let gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+            let gamepad = null;
+            for (let i = 0; i < gamepads.length; i++) {
+                if (gamepads[i]) {
+                    gamepad = gamepads[i];
+                    break; 
+                }
+            }
+
+            Object.values(elements).forEach(el => el.classList.remove('active'));
+
+            if (gamepad) {
+                updateStatus(gamepad);
+                gamepad.buttons.forEach((button, index) => {
+                    const buttonName = buttonMap[index];
+                    if (buttonName && (button.pressed || button.value > 0.1)) {
+                        const el = elements[buttonName];
+                        if (el) { el.classList.add('active'); }
+                    }
+                });
+
+                // Cek Analog Sticks
+                if (Math.abs(gamepad.axes[0]) > 0.1 || Math.abs(gamepad.axes[1]) > 0.1) { elements['LS'].classList.add('active'); }
+                if (Math.abs(gamepad.axes[2]) > 0.1 || Math.abs(gamepad.axes[3]) > 0.1) { elements['RS'].classList.add('active'); }
+
+                // Cek D-Pad Axis (jika bukan tombol)
+                if (gamepad.axes.length > 9) {
+                    const dpadAxisValue = gamepad.axes[9];
+                    if (dpadAxisValue > 0.5) { elements['DPadDown'].classList.add('active'); }
+                    else if (dpadAxisValue < -0.5) { elements['DPadUp'].classList.add('active'); }
+                }
+            } else {
+                updateStatus(null);
+            }
+            animationFrameId = rAF(gameLoop);
+        }
+
+        window.addEventListener("gamepadconnected", (e) => {
+            updateStatus(e.gamepad);
+            if (!animationFrameId) { rAF(gameLoop); }
+        });
+
+        window.addEventListener("gamepaddisconnected", () => {
+            const remainingGamepads = navigator.getGamepads().filter(g => g !== null);
+            if (remainingGamepads.length === 0) {
+                updateStatus(null);
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            } else {
+                updateStatus(remainingGamepads[0]);
+            }
+        });
+        
+        if (navigator.getGamepads()[0]) { rAF(gameLoop); }
+    </script>
+</body>
+</html>
